@@ -252,32 +252,33 @@ process.on('SIGTERM', () => {
 });
 
 // Function to find available port
-async function findAvailablePort(startPort) {
-    const net = require('net');
+// async function findAvailablePort(startPort) {
+//     const net = require('net');
     
-    return new Promise((resolve) => {
-        const server = net.createServer();
-        server.listen(startPort, () => {
-            const port = server.address().port;
-            server.close(() => resolve(port));
-        });
-        server.on('error', () => {
-            findAvailablePort(startPort + 1).then(resolve);
-        });
-    });
-}
+//     return new Promise((resolve) => {
+//         const server = net.createServer();
+//         server.listen(startPort, () => {
+//             const port = server.address().port;
+//             server.close(() => resolve(port));
+//         });
+//         server.on('error', () => {
+//             findAvailablePort(startPort + 1).then(resolve);
+//         });
+//     });
+// }
 
 // Start server with available port
 async function startServer() {
-    const availablePort = await findAvailablePort(3000);
-    
-    app.listen(availablePort, () => {
-        console.log(`🚀 CCTV Streaming Server running on http://localhost:${availablePort}`);
+    const PORT = process.env.PORT || 3000;
+
+    app.listen(PORT, () => {
+        console.log(`🚀 CCTV Streaming Server running on http://localhost:${PORT}`);
         console.log(`📁 Stream files will be saved to: ${streamDir}`);
         console.log(`📹 RTSP Source: ${RTSP_CONFIG.url.replace(/\/\/.*@/, '//***:***@')}`);
-        console.log(`\n🌐 Access from other devices: http://[YOUR-IP]:${availablePort}`);
+        console.log(`\n🌐 Access from other devices: http://[YOUR-IP]:${PORT}`);
     });
 }
+
 
 startServer();
 
