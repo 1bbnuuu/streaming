@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CCTV Live Stream</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'github-bg': '#ffffff',
+                        'github-canvas': '#f6f8fa',
+                        'github-border': '#d0d7de',
+                        'github-text': '#24292f',
+                        'github-text-secondary': '#656d76',
+                        'github-accent': '#0969da',
+                        'github-success': '#1a7f37',
+                        'github-danger': '#cf222e',
+                        'github-warning': '#9a6700',
+                        'github-hover': '#f3f4f6'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-github-canvas min-h-screen text-github-text">
+    <div class="max-w-6xl mx-auto p-6">
+        <!-- Header -->
+        <div class="bg-github-bg border border-github-border rounded-lg p-6 mb-6 shadow-sm">
+            <div class="flex items-center justify-center mb-4">
+                <svg class="w-8 h-8 text-github-text-secondary mr-3" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M2 6a2 2 0 012-2h6l2 2h6a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM5 8a1 1 0 011-1h1a1 1 0 010 2H6a1 1 0 01-1-1zm6 0a1 1 0 011-1h1a1 1 0 010 2h-1a1 1 0 01-1-1z"/>
+                </svg>
+                <h1 class="text-3xl font-semibold text-github-text">CCTV</h1>
+            </div>
+            <p class="text-center text-github-text-secondary">Sistem Monitoring CCTV Real-time</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Video Container -->
+            <div class="lg:col-span-2">
+                <div class="bg-github-bg border border-github-border rounded-lg shadow-sm">
+                    <!-- Status Bar -->
+                    <div class="px-4 py-3 border-b border-github-border">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <div class="w-2 h-2 rounded-full bg-github-danger mr-2" id="statusDot"></div>
+                                <span class="text-sm font-medium" id="status">Memuat stream...</span>
+                            </div>
+                            <div class="flex items-center text-xs text-github-text-secondary">
+                                <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
+                                </svg>
+                                <span id="timestamp">--:--:--</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Video Player -->
+                    <div class="p-4">
+                        <div class="relative bg-black rounded-lg overflow-hidden shadow-inner">
+                            <video id="videoPlayer" class="w-full h-auto max-h-96" controls muted autoplay>
+                                <source src="/stream/index.m3u8" type="application/x-mpegURL">
+                                Browser Anda tidak mendukung video streaming.
+                            </video>
+                            <div class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 text-white" id="loadingOverlay">
+                                <div class="text-center">
+                                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-2"></div>
+                                    <p class="text-sm">Memuat video...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Controls -->
+                    <div class="px-4 pb-4">
+                        <div class="flex gap-3 justify-center">
+                            <button onclick="startStream()" id="startBtn" 
+                                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-github-accent hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-github-accent disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                                <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"/>
+                                </svg>
+                                Mulai Stream
+                            </button>
+                            <button onclick="stopStream()" id="stopBtn" disabled
+                                class="inline-flex items-center px-4 py-2 border border-github-border text-sm font-medium rounded-md text-github-text bg-github-bg hover:bg-github-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-github-border disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                                <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z" clip-rule="evenodd"/>
+                                </svg>
+                                Hentikan Stream
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Info Panel -->
+            <div class="space-y-6">
+                <!-- Connection Status -->
+                <div class="bg-github-bg border border-github-border rounded-lg p-4 shadow-sm">
+                    <h3 class="text-lg font-semibold text-github-text mb-4 flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd"/>
+                        </svg>
+                        Status Sistem
+                    </h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center py-2 border-b border-github-border last:border-b-0">
+                            <span class="text-sm text-github-text-secondary">Koneksi</span>
+                            <span class="text-sm font-mono px-2 py-1 bg-github-canvas rounded text-github-danger" id="connectionStatus">Terputus</span>
+                        </div>
+                        <div class="flex justify-between items-center py-2 border-b border-github-border last:border-b-0">
+                            <span class="text-sm text-github-text-secondary">IP Kamera</span>
+                            <span class="text-sm font-mono px-2 py-1 bg-github-canvas rounded">192.168.18.154</span>
+                        </div>
+                        <div class="flex justify-between items-center py-2 border-b border-github-border last:border-b-0">
+                            <span class="text-sm text-github-text-secondary">Format</span>
+                            <span class="text-sm font-mono px-2 py-1 bg-github-canvas rounded">HLS</span>
+                        </div>
+                        <div class="flex justify-between items-center py-2">
+                            <span class="text-sm text-github-text-secondary">Resolusi</span>
+                            <span class="text-sm font-mono px-2 py-1 bg-github-canvas rounded" id="resolution">Auto</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stream Info -->
+                <!-- <div class="bg-github-bg border border-github-border rounded-lg p-4 shadow-sm">
+                    <h3 class="text-lg font-semibold text-github-text mb-4 flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                        </svg>
+                        Informasi Stream
+                    </h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center py-2 border-b border-github-border last:border-b-0">
+                            <span class="text-sm text-github-text-secondary">Bitrate</span>
+                            <span class="text-sm font-mono px-2 py-1 bg-github-canvas rounded" id="bitrate">-- kbps</span>
+                        </div>
+                        <div class="flex justify-between items-center py-2 border-b border-github-border last:border-b-0">
+                            <span class="text-sm text-github-text-secondary">FPS</span>
+                            <span class="text-sm font-mono px-2 py-1 bg-github-canvas rounded" id="fps">-- fps</span>
+                        </div>
+                        <div class="flex justify-between items-center py-2 border-b border-github-border last:border-b-0">
+                            <span class="text-sm text-github-text-secondary">Buffer</span>
+                            <span class="text-sm font-mono px-2 py-1 bg-github-canvas rounded" id="buffer">-- s</span>
+                        </div>
+                        <div class="flex justify-between items-center py-2">
+                            <span class="text-sm text-github-text-secondary">Latency</span>
+                            <span class="text-sm font-mono px-2 py-1 bg-github-canvas rounded" id="latency">-- ms</span>
+                        </div>
+                    </div>
+                </div> -->
+
+                <!-- Activity Log -->
+                <div class="bg-github-bg border border-github-border rounded-lg p-4 shadow-sm">
+                    <h3 class="text-lg font-semibold text-github-text mb-4 flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd"/>
+                        </svg>
+                        Log Aktivitas
+                    </h3>
+                    <div class="max-h-40 overflow-y-auto">
+                        <div id="activityLog" class="space-y-2 text-xs">
+                            <div class="text-github-text-secondary">Sistem siap...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.4.10/hls.min.js"></script>
+    <script>
+        let hls;
+        let streamActive = false;
+        const video = document.getElementById('videoPlayer');
+        const status = document.getElementById('status');
+        const statusDot = document.getElementById('statusDot');
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const connectionStatus = document.getElementById('connectionStatus');
+        const resolution = document.getElementById('resolution');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const activityLog = document.getElementById('activityLog');
+        const timestamp = document.getElementById('timestamp');
+
+        // Update timestamp
+        function updateTimestamp() {
+            const now = new Date();
+            timestamp.textContent = now.toLocaleTimeString('id-ID');
+        }
+        setInterval(updateTimestamp, 1000);
+        updateTimestamp();
+
+        // Add activity log
+        function addLog(message, type = 'info') {
+            const logEntry = document.createElement('div');
+            const time = new Date().toLocaleTimeString('id-ID');
+            const colors = {
+                info: 'text-github-text-secondary',
+                success: 'text-github-success',
+                error: 'text-github-danger',
+                warning: 'text-github-warning'
+            };
+            logEntry.className = colors[type] || colors.info;
+            logEntry.textContent = `${time} - ${message}`;
+            activityLog.appendChild(logEntry);
+            activityLog.scrollTop = activityLog.scrollHeight;
+            
+            // Keep only last 20 logs
+            while (activityLog.children.length > 20) {
+                activityLog.removeChild(activityLog.firstChild);
+            }
+        }
+
+        function updateStatus(message, type) {
+            status.textContent = message;
+            const colors = {
+                loading: 'bg-github-warning',
+                connected: 'bg-github-success',
+                error: 'bg-github-danger'
+            };
+            statusDot.className = `w-2 h-2 rounded-full mr-2 ${colors[type] || 'bg-github-danger'}`;
+        }
+
+        function updateConnectionStatus(isConnected) {
+            connectionStatus.textContent = isConnected ? 'Terhubung' : 'Terputus';
+            connectionStatus.className = `text-sm font-mono px-2 py-1 bg-github-canvas rounded ${isConnected ? 'text-github-success' : 'text-github-danger'}`;
+        }
+
+        function hideLoadingOverlay() {
+            loadingOverlay.classList.add('hidden');
+        }
+
+        function showLoadingOverlay() {
+            loadingOverlay.classList.remove('hidden');
+        }
+
+        async function startStream() {
+            try {
+                updateStatus('Memulai stream CCTV...', 'loading');
+                addLog('Memulai proses streaming...', 'info');
+                startBtn.disabled = true;
+                showLoadingOverlay();
+                
+                // Panggil API untuk memulai ffmpeg
+                const response = await fetch('/api/start-stream', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                const result = await response.json();
+                
+                if (!response.ok || !result.success) {
+                    throw new Error(result.message || 'Gagal memulai stream');
+                }
+
+                addLog('Server stream berhasil dimulai', 'success');
+                
+                // Tunggu file m3u8 terbuat
+                let attempts = 0;
+                const maxAttempts = 15;
+                
+                const checkStream = async () => {
+                    try {
+                        const streamCheck = await fetch('/stream/index.m3u8');
+                        if (streamCheck.ok) {
+                            addLog('File stream siap, menginisialisasi video...', 'success');
+                            setTimeout(() => {
+                                initializeVideo();
+                            }, 1000);
+                            return true;
+                        }
+                    } catch (e) {
+                        console.log('Stream not ready yet...');
+                    }
+                    
+                    attempts++;
+                    if (attempts < maxAttempts) {
+                        setTimeout(checkStream, 2000);
+                    } else {
+                        throw new Error('Timeout menunggu stream file');
+                    }
+                };
+                
+                checkStream();
+
+            } catch (error) {
+                console.error('Error starting stream:', error);
+                updateStatus(`Error: ${error.message}`, 'error');
+                addLog(`Error: ${error.message}`, 'error');
+                startBtn.disabled = false;
+                hideLoadingOverlay();
+            }
+        }
+
+        async function stopStream() {
+            try {
+                updateStatus('Menghentikan stream...', 'loading');
+                addLog('Menghentikan stream...', 'info');
+                stopBtn.disabled = true;
+
+                // Panggil API untuk menghentikan ffmpeg
+                await fetch('/api/stop-stream', {
+                    method: 'POST'
+                });
+
+                if (hls) {
+                    hls.destroy();
+                    hls = null;
+                }
+
+                video.src = '';
+                streamActive = false;
+                updateStatus('Stream dihentikan', 'error');
+                updateConnectionStatus(false);
+                addLog('Stream berhasil dihentikan', 'info');
+                startBtn.disabled = false;
+                stopBtn.disabled = true;
+                showLoadingOverlay();
+
+            } catch (error) {
+                console.error('Error stopping stream:', error);
+                addLog(`Error menghentikan stream: ${error.message}`, 'error');
+                stopBtn.disabled = false;
+            }
+        }
+
+        function initializeVideo() {
+            const streamUrl = '/stream/index.m3u8';
+            
+            if (Hls.isSupported()) {
+                if (hls) {
+                    hls.destroy();
+                }
+                
+                hls = new Hls({
+                    enableWorker: true,
+                    lowLatencyMode: false,
+                    backBufferLength: 90,
+                    maxBufferLength: 30,
+                    maxMaxBufferLength: 60,
+                    liveSyncDurationCount: 3,
+                    liveMaxLatencyDurationCount: 5
+                });
+
+                hls.loadSource(streamUrl);
+                hls.attachMedia(video);
+
+                hls.on(Hls.Events.MANIFEST_PARSED, function() {
+                    console.log('HLS manifest loaded');
+                    updateStatus('Stream terhubung', 'connected');
+                    updateConnectionStatus(true);
+                    addLog('HLS manifest berhasil dimuat', 'success');
+                    streamActive = true;
+                    startBtn.disabled = false;
+                    stopBtn.disabled = false;
+                    hideLoadingOverlay();
+                    
+                    // Auto play
+                    video.play().catch(e => {
+                        console.log('Autoplay prevented:', e);
+                        updateStatus('Stream siap - Klik play untuk memulai', 'connected');
+                        addLog('Autoplay dicegah browser, klik play manual', 'info');
+                    });
+                });
+
+                hls.on(Hls.Events.ERROR, function(event, data) {
+                    console.error('HLS Error:', data);
+                    if (data.fatal) {
+                        switch(data.type) {
+                            case Hls.ErrorTypes.NETWORK_ERROR:
+                                console.log('Network error, trying to recover...');
+                                addLog('Network error, mencoba recovery...', 'warning');
+                                hls.startLoad();
+                                break;
+                            case Hls.ErrorTypes.MEDIA_ERROR:
+                                console.log('Media error, trying to recover...');
+                                addLog('Media error, mencoba recovery...', 'warning');
+                                hls.recoverMediaError();
+                                break;
+                            default:
+                                updateStatus('Error fatal pada stream', 'error');
+                                updateConnectionStatus(false);
+                                addLog('Error fatal pada stream', 'error');
+                                hls.destroy();
+                                break;
+                        }
+                    }
+                });
+
+                hls.on(Hls.Events.LEVEL_LOADED, function(event, data) {
+                    const level = hls.levels[hls.currentLevel];
+                    if (level) {
+                        resolution.textContent = `${level.width}x${level.height}`;
+                    }
+                });
+
+            } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                // Untuk Safari
+                video.src = streamUrl;
+                video.addEventListener('loadedmetadata', function() {
+                    console.log('Native HLS loaded');
+                    updateStatus('Stream terhubung', 'connected');
+                    updateConnectionStatus(true);
+                    addLog('Native HLS dimuat (Safari)', 'success');
+                    streamActive = true;
+                    startBtn.disabled = false;
+                    stopBtn.disabled = false;
+                    hideLoadingOverlay();
+                });
+                
+                video.addEventListener('canplay', function() {
+                    video.play().catch(e => console.log('Autoplay prevented:', e));
+                });
+            } else {
+                updateStatus('Browser tidak mendukung HLS', 'error');
+                addLog('Browser tidak mendukung HLS', 'error');
+                console.error('HLS not supported');
+            }
+        }
+
+        // Event listeners untuk video
+        video.addEventListener('loadedmetadata', function() {
+            console.log('Video metadata loaded:', video.videoWidth + 'x' + video.videoHeight);
+            resolution.textContent = `${video.videoWidth}x${video.videoHeight}`;
+            addLog(`Video metadata dimuat: ${video.videoWidth}x${video.videoHeight}`, 'info');
+        });
+
+        video.addEventListener('error', function(e) {
+            console.error('Video error:', e);
+            updateStatus('Error video player', 'error');
+            updateConnectionStatus(false);
+            addLog('Error pada video player', 'error');
+        });
+
+        video.addEventListener('playing', function() {
+            console.log('Video is playing');
+            updateStatus('Stream sedang berjalan', 'connected');
+            addLog('Video streaming dimulai', 'success');
+        });
+
+        video.addEventListener('waiting', function() {
+            console.log('Video is buffering');
+            addLog('Video buffering...', 'info');
+        });
+
+        // Check status setiap 30 detik
+        setInterval(async () => {
+            try {
+                const response = await fetch('/api/stream-status');
+                const data = await response.json();
+                
+                if (!data.active && streamActive) {
+                    updateStatus('Stream terputus', 'error');
+                    updateConnectionStatus(false);
+                    addLog('Stream terputus dari server', 'error');
+                    streamActive = false;
+                }
+            } catch (error) {
+                console.error('Error checking status:', error);
+            }
+        }, 30000);
+
+        // Initial log
+        addLog('Sistem CCTV siap digunakan', 'success');
+    </script>
+</body>
+</html>
